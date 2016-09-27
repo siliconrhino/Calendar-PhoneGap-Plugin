@@ -40,7 +40,7 @@ This plugin allows you to add events to the Calendar of the mobile device.
 * On iOS 10+ you need to provide a reason to the user for Calendar access. This plugin adds an empty `NSCalendarsUsageDescription` key to the /platforms/ios/*-Info.plist file which you can override with your custom string [per Apple's guideline](https://developer.apple.com/library/prerelease/content/documentation/General/Reference/InfoPlistKeyReference/Articles/CocoaKeys.html#//apple_ref/doc/uid/TP40009251-SW15).
 
 ### Android specifics
-* Supported methods on Android 4: `find`, `create` (silent and interactive), `delete`, ..
+* Supported methods on Android 4: `find`, `create` (silent and interactive), `modify`, `delete`, ..
 * Supported methods on Android 2 and 3: `create` interactive only: the user is presented a prefilled Calendar event. Pressing the hardware back button will give control back to your app.
 
 ## 2. Installation
@@ -138,9 +138,10 @@ findEventWithOptions                |             | yes | yes
 listEventsInRange                   |             |     | yes
 listCalendars                       |             | yes | yes
 findAllEventsInNamedCalendars       |             | yes | 
-modifyEvent                         |             | yes | 
-modifyEventWithOptions              |             | yes | 
+modifyEvent                         |             | yes | yes
+modifyEventWithOptions              |             | yes | partial
 deleteEvent                         |             | yes | yes
+deleteEventWithOptions              |             | yes | yes
 deleteEventFromNamedCalendar        |             | yes | 
 openCalendar                        |             | yes | yes
 
@@ -216,24 +217,29 @@ Basic operations, you'll want to copy-paste this for testing purposes:
   // find all _future_ events in the first calendar with the specified name (iOS only for now, this includes a list of attendees (if any))
   window.plugins.calendar.findAllEventsInNamedCalendar(calendarName,success,error);
 
-  // change an event (iOS only for now)
+  // change an event
   var newTitle = "New title!";
   window.plugins.calendar.modifyEvent(title,eventLocation,notes,startDate,endDate,newTitle,eventLocation,notes,startDate,endDate,success,error);
 
-  // or to add a reminder, make it recurring, change the calendar, or the url, use this one:
+  // or to modify by id, add a reminder, make it recurring, change the calendar, or the url, use this one:
   var filterOptions = window.plugins.calendar.getCalendarOptions(); // or {} or null for the defaults
   filterOptions.calendarName = "Bla"; // iOS only
-  filterOptions.id = "D9B1D85E-1182-458D-B110-4425F17819F1"; // iOS only, get it from createEventWithOptions (if not found, we try matching against title, etc)
+  filterOptions.id = "D9B1D85E-1182-458D-B110-4425F17819F1"; // if not found, we try matching against title, etc
   var newOptions = window.plugins.calendar.getCalendarOptions();
-  newOptions.calendaName = "New Bla"; // make sure this calendar exists before moving the event to it
+  newOptions.calendaName = "New Bla"; // iOS only. make sure this calendar exists before moving the event to it
   // not passing in reminders will wipe them from the event. To wipe the default first reminder (60), set it to null.
-  newOptions.firstReminderMinutes = 120;
+  newOptions.firstReminderMinutes = 120; // iOS only
   window.plugins.calendar.modifyEventWithOptions(title,eventLocation,notes,startDate,endDate,newTitle,eventLocation,notes,startDate,endDate,filterOptions,newOptions,success,error);
 
   // delete an event (you can pass nulls for irrelevant parameters, note that on Android `notes` is ignored). The dates are mandatory and represent a date range to delete events in.
   // note that on iOS there is a bug where the timespan must not be larger than 4 years, see issue 102 for details.. call this method multiple times if need be
   // since 4.3.0 you can match events starting with a prefix title, so if your event title is 'My app - cool event' then 'My app -' will match.
-  window.plugins.calendar.deleteEvent(newTitle,eventLocation,notes,startDate,endDate,success,error);
+  window.plugins.calendar.deleteEvent(title,eventLocation,notes,startDate,endDate,success,error);
+  
+  // or to delete by id, use this one:
+  var filterOptions = window.plugins.calendar.getCalendarOptions(); // or {} or null for the defaults
+  filterOptions.id = "D9B1D85E-1182-458D-B110-4425F17819F1"; // if not found, we try matching against title, etc
+  window.plugins.calendar.deleteEventWithOptions(title,eventLocation,notes,startDate,endDate,options,success,error);
 
   // delete an event, as above, but for a specific calendar (iOS only)
   window.plugins.calendar.deleteEventFromNamedCalendar(newTitle,eventLocation,notes,startDate,endDate,calendarName,success,error);
