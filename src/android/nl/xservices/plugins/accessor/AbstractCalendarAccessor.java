@@ -420,6 +420,48 @@ public abstract class AbstractCalendarAccessor {
     return nrDeletedRecords > 0;
   }
 
+  public boolean modifyEvent(Uri eventsUri, String eventId, String title, String location, String notes, long startTime, long endTime,
+                             String newTitle, String newLocation, String newNotes, long newStartTime, long newEndTime) {
+
+    // find event by id or other info
+
+    Event[] events = fetchEventInstances(eventId, title, location, "", startTime, endTime);
+
+    if (events == null || events.length == 0) {
+      return false;
+    }
+
+    // construct update values
+
+    ContentValues values = new ContentValues();
+    final boolean allDayEvent = isAllDayEvent(new Date(newStartTime), new Date(newEndTime));
+    if (allDayEvent) {
+      // all day events must be in UTC time zone per Android specification, getOffset accounts for daylight savings time
+      values.put(Events.EVENT_TIMEZONE, "UTC");
+      values.put(Events.DTSTART, newStartTime + TimeZone.getDefault().getOffset(newStartTime));
+      values.put(Events.DTEND, newEndTime + TimeZone.getDefault().getOffset(newEndTime));
+    } else {
+      values.put(Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
+      values.put(Events.DTSTART, newStartTime);
+      values.put(Events.DTEND, newEndTime);
+    }
+    values.put(Events.ALL_DAY, allDayEvent ? 1 : 0);
+    values.put(Events.TITLE, newTitle);
+    values.put(Events.EVENT_LOCATION, newLocation);
+    values.put(Events.DESCRIPTION, newNotes);
+
+    // run update on the event uri
+
+    ContentResolver resolver = this.cordova.getActivity().getApplicationContext().getContentResolver();
+
+    Event first = events[0];
+    Uri eventUri = ContentUris.withAppendedId(Events.CONTENT_URI, Integer.parseInt(first.eventId));
+
+    int nrUpdatedRecords = resolver.update(eventUri, values, null, null);
+
+    return nrUpdatedRecords > 0;
+  }
+
   public String createEvent(Uri eventsUri, String title, long startTime, long endTime, String description,
                             String location, Long firstReminderMinutes, Long secondReminderMinutes,
                             String recurrence, int recurrenceInterval, Long recurrenceEndTime, Integer calendarId, String url) {

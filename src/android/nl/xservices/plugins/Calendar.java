@@ -41,6 +41,7 @@ public class Calendar extends CordovaPlugin {
 
   private static final String ACTION_OPEN_CALENDAR = "openCalendar";
   private static final String ACTION_CREATE_EVENT_WITH_OPTIONS = "createEventWithOptions";
+  private static final String ACTION_MODIFY_EVENT_WITH_OPTIONS = "modifyEventWithOptions";
   private static final String ACTION_CREATE_EVENT_INTERACTIVELY = "createEventInteractively";
   private static final String ACTION_DELETE_EVENT_WITH_OPTIONS = "deleteEventWithOptions";
   private static final String ACTION_FIND_EVENT_WITH_OPTIONS = "findEventWithOptions";
@@ -89,6 +90,9 @@ public class Calendar extends CordovaPlugin {
       } else {
         createEvent(args);
       }
+      return true;
+    } else if (ACTION_MODIFY_EVENT_WITH_OPTIONS.equals(action)) {
+      modifyEvent(args);
       return true;
     } else if (ACTION_CREATE_EVENT_INTERACTIVELY.equals(action)) {
       createEventInteractively(args);
@@ -494,6 +498,47 @@ public class Calendar extends CordovaPlugin {
       });
     } catch (JSONException e) {
       System.err.println("Exception: " + e.getMessage());
+      callback.error(e.getMessage());
+    }
+  }
+
+  private void modifyEvent(JSONArray args) {
+    // note that if the dev didn't call requestWritePermission before calling this method and calendarPermissionGranted returns false,
+    // the app will ask permission and this method needs to be invoked again (done for backward compat).
+    if (!calendarPermissionGranted(Manifest.permission.WRITE_CALENDAR)) {
+      requestWritePermission(PERMISSION_REQCODE_CREATE_EVENT);
+      return;
+    }
+
+    try {
+      final JSONObject argObject = args.getJSONObject(0);
+      final JSONObject argOptionsObject = argObject.getJSONObject("options");
+
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            boolean modifyResult = getCalendarAccessor().modifyEvent(
+                null,
+                getPossibleNullString("id", argOptionsObject),
+                getPossibleNullString("title", argObject),
+                getPossibleNullString("location", argObject),
+                getPossibleNullString("notes", argObject),
+                argObject.optLong("startTime"),
+                argObject.optLong("endTime"),
+                getPossibleNullString("newTitle", argObject),
+                getPossibleNullString("newLocation", argObject),
+                getPossibleNullString("newNotes", argObject),
+                argObject.getLong("newStartTime"),
+                argObject.getLong("newEndTime"));
+            callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, modifyResult));
+          } catch (JSONException e) {
+            e.printStackTrace();
+          }
+        }
+      });
+    } catch (Exception e) {
+      Log.e(LOG_TAG, "Error modifying event. Invoking error callback.", e);
       callback.error(e.getMessage());
     }
   }
