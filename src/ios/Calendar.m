@@ -267,6 +267,9 @@
   NSString* notes      = [options objectForKey:@"notes"];
   NSNumber* startTime  = [options objectForKey:@"startTime"];
   NSNumber* endTime    = [options objectForKey:@"endTime"];
+    
+  NSDictionary* calOptions = [options objectForKey:@"options"];
+  NSString* calEventID = [calOptions objectForKey:@"id"];
 
   [self.commandDelegate runInBackground: ^{
     NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
@@ -276,7 +279,20 @@
     NSDate *myEndDate = [NSDate dateWithTimeIntervalSince1970:_endInterval];
 
     NSArray *calendars = [NSArray arrayWithObject:calendar];
-    NSArray *matchingEvents = [self findEKEventsWithTitle:title location:location notes:notes startDate:myStartDate endDate:myEndDate calendars:calendars];
+    
+    // Find matches
+    EKCalendarItem *theEvent;
+    if (calEventID != nil) {
+        theEvent = [self.eventStore calendarItemWithIdentifier:calEventID];
+    }
+      
+    NSArray *matchingEvents;
+      
+    if (theEvent == nil) {
+        matchingEvents = [self findEKEventsWithTitle:title location:location notes:notes startDate:myStartDate endDate:myEndDate calendars:calendars];
+    } else {
+        matchingEvents = [NSArray arrayWithObject:theEvent];
+    }
 
     NSError *error = NULL;
     for (EKEvent * event in matchingEvents) {
@@ -683,7 +699,7 @@
 }
 
 
-- (void) deleteEvent:(CDVInvokedUrlCommand*)command {
+- (void) deleteEventWithOptions:(CDVInvokedUrlCommand*)command {
   EKCalendar* calendar = self.eventStore.defaultCalendarForNewEvents;
 
   if (calendar == nil) {

@@ -181,15 +181,29 @@ Calendar.prototype.findAllEventsInNamedCalendar = function (calendarName, succes
 };
 
 Calendar.prototype.deleteEvent = function (title, location, notes, startDate, endDate, successCallback, errorCallback) {
+  Calendar.prototype.deleteEventWithOptions(title, location, notes, startDate, endDate, successCallback, errorCallback);
+};
+
+Calendar.prototype.deleteEventWithOptions = function (title, location, notes, startDate, endDate, options, successCallback, errorCallback) {
   if (!(startDate instanceof Date && endDate instanceof Date)) {
     errorCallback("startDate and endDate must be JavaScript Date Objects");
   }
-  cordova.exec(successCallback, errorCallback, "Calendar", "deleteEvent", [{
+
+  // merge passed options with defaults
+  var mergedOptions = Calendar.prototype.getCalendarOptions();
+  for (var val in options) {
+    if (options.hasOwnProperty(val)) {
+      mergedOptions[val] = options[val];
+    }
+  }
+
+  cordova.exec(successCallback, errorCallback, "Calendar", "deleteEventWithOptions", [{
     "title": title,
     "location": location,
     "notes": notes,
     "startTime": startDate instanceof Date ? startDate.getTime() : null,
-    "endTime": endDate instanceof Date ? endDate.getTime() : null
+    "endTime": endDate instanceof Date ? endDate.getTime() : null,
+    "options": mergedOptions,
   }])
 };
 

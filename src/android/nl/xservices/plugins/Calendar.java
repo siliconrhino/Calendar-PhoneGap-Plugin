@@ -42,7 +42,7 @@ public class Calendar extends CordovaPlugin {
   private static final String ACTION_OPEN_CALENDAR = "openCalendar";
   private static final String ACTION_CREATE_EVENT_WITH_OPTIONS = "createEventWithOptions";
   private static final String ACTION_CREATE_EVENT_INTERACTIVELY = "createEventInteractively";
-  private static final String ACTION_DELETE_EVENT = "deleteEvent";
+  private static final String ACTION_DELETE_EVENT_WITH_OPTIONS = "deleteEventWithOptions";
   private static final String ACTION_FIND_EVENT_WITH_OPTIONS = "findEventWithOptions";
   private static final String ACTION_LIST_EVENTS_IN_RANGE = "listEventsInRange";
   private static final String ACTION_LIST_CALENDARS = "listCalendars";
@@ -99,7 +99,7 @@ public class Calendar extends CordovaPlugin {
     } else if (!hasLimitedSupport && ACTION_FIND_EVENT_WITH_OPTIONS.equals(action)) {
       findEvents(args);
       return true;
-    } else if (!hasLimitedSupport && ACTION_DELETE_EVENT.equals(action)) {
+    } else if (!hasLimitedSupport && ACTION_DELETE_EVENT_WITH_OPTIONS.equals(action)) {
       deleteEvent(args);
       return true;
     } else if (ACTION_LIST_CALENDARS.equals(action)) {
@@ -438,6 +438,7 @@ public class Calendar extends CordovaPlugin {
 
     try {
       final JSONObject jsonFilter = args.getJSONObject(0);
+      final JSONObject argOptionsObject = jsonFilter.getJSONObject("options");
 
       cordova.getThreadPool().execute(new Runnable() {
         @Override
@@ -445,6 +446,7 @@ public class Calendar extends CordovaPlugin {
 
           boolean deleteResult = getCalendarAccessor().deleteEvent(
               null,
+              getPossibleNullString("id", argOptionsObject),
               jsonFilter.optLong("startTime"),
               jsonFilter.optLong("endTime"),
               getPossibleNullString("title", jsonFilter),

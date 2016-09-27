@@ -81,9 +81,10 @@ public class CalendarProviderAccessor extends AbstractCalendarAccessor {
   }
 
   @Override
-  public boolean deleteEvent(Uri eventsUri, long startFrom, long startTo, String title, String location) {
+  public boolean deleteEvent(Uri eventsUri, String eventId, long startFrom, long startTo, String title, String location) {
     eventsUri = eventsUri == null ? Uri.parse(CONTENT_PROVIDER + CONTENT_PROVIDER_PATH_EVENTS) : eventsUri;
-    return super.deleteEvent(eventsUri, startFrom, startTo, title, location);
+    return super.deleteEvent(eventsUri, eventId, startFrom, startTo, title, location);
+  }
   }
 
   @Override
